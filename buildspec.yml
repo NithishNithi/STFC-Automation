@@ -1,0 +1,13 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      go: 1.23
+  build:
+    commands:
+      - go mod tidy
+      - go build
+artifacts:
+  files:
+    - '**/*'
