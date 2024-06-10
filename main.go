@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
+	"gopkg.in/gomail.v2" // New SMTP package
 )
 
 const url = "https://storeapi.startrekfleetcommand.com/api/v2/offers/gifts/claim"
 
+// Config struct to hold configuration values
 type Config struct {
 	BearerToken       string `json:"bearerToken"`
 	BundleId10m       int    `json:"bundleId10m"`
@@ -26,6 +28,14 @@ type Config struct {
 	TrailBells        int    `json:"TrailBells"`
 	NadionSupply      int    `json:"NadionSupply"`
 	TranswarpCell     int    `json:"TranswarpCell"`
+}
+
+// EmailConfig struct to hold email configuration
+type EmailConfig struct {
+	SenderName     string `json:"sender_name"`
+	SenderEmail    string `json:"sender_email"`
+	SenderPassword string `json:"sender_password"`
+	RecipientEmail string `json:"recipient_email"`
 }
 
 func main() {
@@ -135,4 +145,57 @@ func claimGift(bundleId int, bearerToken string, logger *log.Logger) {
 
 	// Log response status and body
 	logger.Printf("Bundle ID: %d, Status: %s, Response: %s\n", bundleId, resp.Status, body)
+	if resp.StatusCode != http.StatusOK {
+		err := SendEmailNotification(bundleId, "email.config")
+		if err != nil {
+			logger.Printf("Error sending email: %v\n", err)
+		}
+	}
+}
+
+func SendEmailNotification(bundleid int, configFilePath string) error {
+	// Map bundle IDs to failure messages
+	failureMessages := map[int]string{
+		000000000: "24 hour chest failed",
+		787829412: "dailymission key failed",
+		844758222: "4hours chest failed",
+	}
+
+	// Check if the bundle ID corresponds to a failure message
+	failureMessage, found := failureMessages[bundleid]
+	if !found {
+		return fmt.Errorf("bundle ID %d does not correspond to a known failure", bundleid)
+	}
+
+	// Read the email configuration from the JSON file
+	file, err := os.Open(configFilePath)
+	if err != nil {
+		return fmt.Errorf("error opening config file: %v", err)
+	}
+	defer file.Close()
+
+	var config EmailConfig
+	err = json.NewDecoder(file).Decode(&config)
+	if err != nil {
+		return fmt.Errorf("error decoding JSON: %v", err)
+	}
+
+	// Create a new message
+	m := gomail.NewMessage()
+	m.SetHeader("From", config.SenderEmail)
+	m.SetHeader("To", config.RecipientEmail)
+	m.SetHeader("Subject", "STFC - AutomationError")
+	// Include failure message in the email body
+	m.SetBody("text/plain", fmt.Sprintf("STFC automation error: %s", failureMessage))
+
+	// Create new SMTP dialer
+	d := gomail.NewDialer("smtp.gmail.com", 587, config.SenderEmail, config.SenderPassword)
+
+	// Send the email
+	if err := d.DialAndSend(m); err != nil {
+		return fmt.Errorf("error sending email: %v", err)
+	}
+
+	fmt.Println("Email sent successfully!")
+	return nil
 }

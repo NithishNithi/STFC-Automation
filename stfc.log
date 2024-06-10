@@ -1,0 +1,3 @@
+2024/06/10 17:40:32 Bundle ID: 1786571320, Status: 404 Not Found, Response: {"statusCode":404,"timestamp":"2024-06-10T12:10:32.149Z","message":"Bundle not available.","error":"bundle"}
+2024/06/10 17:40:32 Error sending email: bundle ID 1786571320 does not correspond to a known failure
+2024/06/10 17:50:31 Bundle ID: 1786571320, Status: 200 OK, Response: {"order":{"order_id":"ubd832d7fc2f4f1a92491b3bffc8acae","created":"2024-06-10 12:20:30"},"orderBundles":[{"bundle_id":1786571320,"bundle_version":64,"content":[{"id":1786571320,"name":"10 Min Free Chest - Lv. 26-32","version":64,"type":"U","contents":[{"quantity":1,"level":"","id":"1823786753","type":"resource","random":true}]}]}]}
