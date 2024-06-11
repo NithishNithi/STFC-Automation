@@ -19,7 +19,7 @@ jobs:
         go-version: 1.18
 
     - name: Build the Go app
-      run: go build -o myapp .
+      run: go build -o stfc .
 
     - name: Deploy to EC2
       uses: appleboy/ssh-action@master
@@ -30,13 +30,13 @@ jobs:
         port: 22
         script: |
           # Stop the running application
-          pkill myapp || true
+          pkill stfc || true
 
           # Remove the old binary
-          rm /home/${{ secrets.AWS_EC2_USER }}/myapp || true
+          rm /home/${{ secrets.AWS_EC2_USER }}/stfc || true
 
           # Upload the new binary
-          scp -i ${{ secrets.AWS_EC2_SSH_KEY }} myapp ${{ secrets.AWS_EC2_USER }}@${{ secrets.AWS_EC2_HOST }}:/home/${{ secrets.AWS_EC2_USER }}/myapp
+          scp -i ${{ secrets.AWS_EC2_SSH_KEY }} stfc ${{ secrets.AWS_EC2_USER }}@${{ secrets.AWS_EC2_HOST }}:/home/${{ secrets.AWS_EC2_USER }}/stfc
 
           # Start the new application
-          nohup /home/${{ secrets.AWS_EC2_USER }}/myapp > /dev/null 2>&1 &
+          nohup /home/${{ secrets.AWS_EC2_USER }}/stfc > /dev/null 2>&1 &
