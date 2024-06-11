@@ -8,5 +8,5 @@ phases:
       - go mod download
   build:
     commands:
-      - go build -o stfc
+      - go build
 
