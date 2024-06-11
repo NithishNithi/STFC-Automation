@@ -8,5 +8,6 @@
     "ReplicatorRations": 1250837343,
     "TrailBells": 718968170,
     "NadionSupply": 1904351560,
-    "TranswarpCell": 71216663
+    "TranswarpCell": 71216663,
+    "slackWebhookURL": "https://hooks.slack.com/services/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"
 }

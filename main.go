@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"gopkg.in/gomail.v2" // New SMTP package
 )
 
 const url = "https://storeapi.startrekfleetcommand.com/api/v2/offers/gifts/claim"
@@ -28,14 +27,7 @@ type Config struct {
 	TrailBells        int    `json:"TrailBells"`
 	NadionSupply      int    `json:"NadionSupply"`
 	TranswarpCell     int    `json:"TranswarpCell"`
-}
-
-// EmailConfig struct to hold email configuration
-type EmailConfig struct {
-	SenderName     string `json:"sender_name"`
-	SenderEmail    string `json:"sender_email"`
-	SenderPassword string `json:"sender_password"`
-	RecipientEmail string `json:"recipient_email"`
+	SlackWebhookURL   string `json:"slackWebhookURL"`
 }
 
 func main() {
@@ -51,7 +43,7 @@ func main() {
 	logger := log.New(logFile, "", log.LstdFlags)
 
 	// Read config file
-	config, err := readConfig("config.json")
+	config, err := ReadConfig("config.json")
 	if err != nil {
 		log.Fatalf("Error reading config file: %v", err)
 	}
@@ -59,7 +51,7 @@ func main() {
 	// Schedule the first cron job (every 10 minutes and 30 seconds)
 	_, err = c.AddFunc("30 */10 * * * *", func() {
 		fmt.Println("Running cron job: every 10 minutes and 30 seconds")
-		claimGift(config.BundleId10m, config.BearerToken, logger)
+		ClaimGift(config.BundleId10m, config.BearerToken, logger, config.SlackWebhookURL)
 	})
 	if err != nil {
 		log.Fatalf("Error scheduling the first cron job: %v", err)
@@ -68,7 +60,7 @@ func main() {
 	// Schedule the second cron job (every 4 hours and 30 seconds)
 	_, err = c.AddFunc("30 0 */4 * * *", func() {
 		fmt.Println("Running cron job: every 4 hours and 30 seconds")
-		claimGift(config.BundleId4h, config.BearerToken, logger)
+		ClaimGift(config.BundleId4h, config.BearerToken, logger, config.SlackWebhookURL)
 	})
 	if err != nil {
 		log.Fatalf("Error scheduling the second cron job: %v", err)
@@ -86,10 +78,10 @@ func main() {
 	}
 
 	for _, bundleId := range bundleIDs {
-		bundleId := bundleId // Capture loop variable
+		bundleId := bundleId
 		_, err = c.AddFunc("30 00 10 * * *", func() {
 			fmt.Printf("Running cron job: daily at 10:00:30 AM for bundle ID %d\n", bundleId)
-			claimGift(bundleId, config.BearerToken, logger)
+			ClaimGift(bundleId, config.BearerToken, logger, config.SlackWebhookURL)
 		})
 		if err != nil {
 			log.Fatalf("Error scheduling daily cron job for bundle ID %d: %v", bundleId, err)
@@ -103,7 +95,7 @@ func main() {
 	select {}
 }
 
-func readConfig(filename string) (*Config, error) {
+func ReadConfig(filename string) (*Config, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -116,7 +108,7 @@ func readConfig(filename string) (*Config, error) {
 	return &config, nil
 }
 
-func claimGift(bundleId int, bearerToken string, logger *log.Logger) {
+func ClaimGift(bundleId int, bearerToken string, logger *log.Logger, slackWebhookURL string) {
 	payload := map[string]int{"bundleId": bundleId}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
@@ -146,62 +138,75 @@ func claimGift(bundleId int, bearerToken string, logger *log.Logger) {
 	// Log response status and body
 	logger.Printf("Bundle ID: %d, Status: %s, Response: %s\n", bundleId, resp.Status, body)
 	if resp.StatusCode != http.StatusOK {
-		err := sendEmailNotification(bundleId, "email.json")
+		err := SendSlackNotification(bundleId, true, slackWebhookURL) // Notify Slack about failure
 		if err != nil {
-			logger.Printf("Error sending email: %v\n", err)
+			logger.Printf("Error sending Slack notification: %v\n", err)
+		}
+	} else {
+		err := SendSlackNotification(bundleId, false, slackWebhookURL) // Notify Slack about success
+		if err != nil {
+			logger.Printf("Error sending Slack notification: %v\n", err)
 		}
 	}
 }
-
-func sendEmailNotification(bundleid int, configFilePath string) error {
-	// Map bundle IDs to failure messages
-	failureMessages := map[int]string{
-		1786571320: "bundleId10m Chest Failed",
-		844758222:  "bundleId4h Chest Failed",
-		1918154038: "24 hour Chest Failed",
-		787829412:  "dailymission Chest Failed",
-		1579845062: "OpticalDiode Chest Failed",
-		1250837343: "ReplicatorRations Chest Failed",
-		718968170:  "TrailBells Chest Failed",
-		1904351560: "NadionSupply Chest Failed",
-		71216663:   "TranswarpCell Chest Failed",
+func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) error {
+	message := map[string]string{}
+	if isFailure {
+		// Map bundle IDs to failure messages
+		FailureMessages := map[int]string{
+			1786571320: "❌ 10 Minutes Chest Failed",
+			844758222:  "❌ 4 Hours Chest Failed",
+			1918154038: "❌ 24 hour Chest Failed",
+			787829412:  "❌ DailyMission Chest Failed",
+			1579845062: "❌ OpticalDiode Chest Failed",
+			1250837343: "❌ ReplicatorRations Chest Failed",
+			718968170:  "❌ TrailBells Chest Failed",
+			1904351560: "❌ NadionSupply Chest Failed",
+			71216663:   "❌ TranswarpCell Chest Failed",
+		}
+		// Check if the bundle ID corresponds to a failure message
+		failureMessage, found := FailureMessages[bundleId]
+		if !found {
+			return fmt.Errorf("bundle ID %d does not correspond to a known failure", bundleId)
+		}
+		message["text"] = fmt.Sprintf("STFC Automation Error: %s", failureMessage)
+	} else {
+		// Map bundle IDs to success messages
+		SuccessMessages := map[int]string{
+			// Add your success messages here
+			1786571320: "✅ 10 Minutes Chest Successful",
+			844758222:  "✅ 4 Hours Chest Successful",
+			1918154038: "✅ 24 hour Chest Successful",
+			787829412:  "✅ DailyMission Chest Successful",
+			1579845062: "✅ OpticalDiode Chest Successful",
+			1250837343: "✅ ReplicatorRations Chest Successful",
+			718968170:  "✅ TrailBells Chest Successful",
+			1904351560: "✅ NadionSupply Chest Successful",
+			71216663:   "✅ TranswarpCell Chest Successful",
+		}
+		// Check if the bundle ID corresponds to a success message
+		successMessage, found := SuccessMessages[bundleId]
+		if !found {
+			return fmt.Errorf("bundle ID %d does not correspond to a known success", bundleId)
+		}
+		message["text"] = fmt.Sprintf("STFC Automation Success: %s", successMessage)
 	}
 
-	// Check if the bundle ID corresponds to a failure message
-	failureMessage, found := failureMessages[bundleid]
-	if !found {
-		return fmt.Errorf("bundle ID %d does not correspond to a known failure", bundleid)
-	}
-
-	// Read the email configuration from the JSON file
-	file, err := os.Open(configFilePath)
+	messageBytes, err := json.Marshal(message)
 	if err != nil {
-		return fmt.Errorf("error opening config file: %v", err)
+		return fmt.Errorf("error marshalling Slack message: %v", err)
 	}
-	defer file.Close()
 
-	var config EmailConfig
-	err = json.NewDecoder(file).Decode(&config)
+	resp, err := http.Post(webhookURL, "application/json", bytes.NewBuffer(messageBytes))
 	if err != nil {
-		return fmt.Errorf("error decoding JSON: %v", err)
+		return fmt.Errorf("error sending Slack notification: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("received non-OK response code: %d", resp.StatusCode)
 	}
 
-	// Create a new message
-	m := gomail.NewMessage()
-	m.SetHeader("From", config.SenderEmail)
-	m.SetHeader("To", config.RecipientEmail)
-	m.SetHeader("Subject", "STFC - Automation Error")
-	// Include failure message in the email body
-	m.SetBody("text/plain", fmt.Sprintf("STFC automation error: %s", failureMessage))
-
-	// Create new SMTP dialer
-	d := gomail.NewDialer("smtp.gmail.com", 587, config.SenderEmail, config.SenderPassword)
-
-	// Send the email
-	if err := d.DialAndSend(m); err != nil {
-		return fmt.Errorf("error sending email: %v", err)
-	}
-
-	fmt.Println("Email sent successfully!")
+	fmt.Println("Slack notification sent successfully!")
 	return nil
 }
