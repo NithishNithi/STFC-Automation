@@ -18,8 +18,8 @@ jobs:
       with:
         go-version: 1.21
 
-    - name: Deploy to EC2
-      uses: appleboy/ssh-action@master
+    - name: Clean up EC2 instance
+      uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ secrets.AWS_EC2_HOST }}
         username: ${{ secrets.AWS_EC2_USER }}
@@ -36,7 +36,7 @@ jobs:
           mkdir -p /home/${{ secrets.AWS_EC2_USER }}/my-go-app
 
     - name: Upload project files to EC2
-      uses: appleboy/scp-action@master
+      uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.AWS_EC2_HOST }}
         username: ${{ secrets.AWS_EC2_USER }}
@@ -46,7 +46,7 @@ jobs:
         target: "/home/${{ secrets.AWS_EC2_USER }}/my-go-app"
 
     - name: Build and run the new application
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ secrets.AWS_EC2_HOST }}
         username: ${{ secrets.AWS_EC2_USER }}
@@ -56,3 +56,4 @@ jobs:
           cd /home/${{ secrets.AWS_EC2_USER }}/my-go-app
           go build -o stfc .
           nohup ./stfc > /dev/null 2>&1 &
+          
