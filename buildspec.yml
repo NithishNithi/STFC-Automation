@@ -1,0 +1,12 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      golang: 1.21
+    commands:
+      - go mod download
+  build:
+    commands:
+      - go build -o stfc
+
