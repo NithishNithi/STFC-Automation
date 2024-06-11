@@ -14,7 +14,6 @@ permissions:
     group: ec2-user
  
 hooks:
-
   ApplicationStart:
     - location: app_start.sh
       timeout: 300
