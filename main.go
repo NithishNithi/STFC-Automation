@@ -87,7 +87,7 @@ func main() {
 
 	for _, bundleId := range bundleIDs {
 		bundleId := bundleId // Capture loop variable
-		_, err = c.AddFunc("30 0 10 * * *", func() {
+		_, err = c.AddFunc("35 0 12 * * *", func() {
 			fmt.Printf("Running cron job: daily at 10:00:30 AM for bundle ID %d\n", bundleId)
 			claimGift(bundleId, config.BearerToken, logger)
 		})
@@ -156,9 +156,15 @@ func claimGift(bundleId int, bearerToken string, logger *log.Logger) {
 func SendEmailNotification(bundleid int, configFilePath string) error {
 	// Map bundle IDs to failure messages
 	failureMessages := map[int]string{
-		000000000: "24 hour chest failed",
-		787829412: "dailymission key failed",
-		844758222: "4hours chest failed",
+		1786571320: "bundleId10m Chest Failed",
+		844758222:  "bundleId4h Chest Failed",
+		000000000:  "24 hour Chest Failed",
+		787829412:  "dailymission Chest Failed",
+		1579845062: "OpticalDiode Chest Failed",
+		1250837343: "ReplicatorRations Chest Failed",
+		718968170:  "TrailBells Chest Failed",
+		1904351560: "NadionSupply Chest Failed",
+		71216663:   "TranswarpCell Chest Failed",
 	}
 
 	// Check if the bundle ID corresponds to a failure message
