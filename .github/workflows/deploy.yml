@@ -13,30 +13,43 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Go on runner
+    - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.21
+        go-version: 1.18
 
-    - name: Clean up EC2 instance
-      uses: appleboy/ssh-action@v0.1.5
+    - name: Stop the running application
+      uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.AWS_EC2_HOST }}
         username: ${{ secrets.AWS_EC2_USER }}
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-          # Stop the running application
           pkill stfc || true
 
-          # Remove all files of the previous project
+    - name: Remove old project files
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.AWS_EC2_HOST }}
+        username: ${{ secrets.AWS_EC2_USER }}
+        key: ${{ secrets.AWS_EC2_SSH_KEY }}
+        port: 22
+        script: |
           rm -rf /home/${{ secrets.AWS_EC2_USER }}/my-go-app || true
 
-          # Create a directory for the new project
+    - name: Create directory for new project files
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.AWS_EC2_HOST }}
+        username: ${{ secrets.AWS_EC2_USER }}
+        key: ${{ secrets.AWS_EC2_SSH_KEY }}
+        port: 22
+        script: |
           mkdir -p /home/${{ secrets.AWS_EC2_USER }}/my-go-app
 
     - name: Upload project files to EC2
-      uses: appleboy/scp-action@v0.1.4
+      uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.AWS_EC2_HOST }}
         username: ${{ secrets.AWS_EC2_USER }}
@@ -45,31 +58,8 @@ jobs:
         source: "."
         target: "/home/${{ secrets.AWS_EC2_USER }}/my-go-app"
 
-    - name: Install Go on EC2
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: ${{ secrets.AWS_EC2_HOST }}
-        username: ${{ secrets.AWS_EC2_USER }}
-        key: ${{ secrets.AWS_EC2_SSH_KEY }}
-        port: 22
-        script: |
-          wget https://golang.org/dl/go1.21.0.linux-amd64.tar.gz
-          sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
-
-    - name: Configure Go environment on EC2
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: ${{ secrets.AWS_EC2_HOST }}
-        username: ${{ secrets.AWS_EC2_USER }}
-        key: ${{ secrets.AWS_EC2_SSH_KEY }}
-        port: 22
-        script: |
-          echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.profile
-          source ~/.profile
-          go version
-
     - name: Build and run the new application
-      uses: appleboy/ssh-action@v0.1.5
+      uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.AWS_EC2_HOST }}
         username: ${{ secrets.AWS_EC2_USER }}
@@ -77,6 +67,6 @@ jobs:
         port: 22
         script: |
           cd /home/${{ secrets.AWS_EC2_USER }}/my-go-app
-          /usr/local/go/bin/go build -o stfc .
+          go build -o stfc .
           nohup ./stfc > /dev/null 2>&1 &
           
