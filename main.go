@@ -87,7 +87,7 @@ func main() {
 
 	for _, bundleId := range bundleIDs {
 		bundleId := bundleId // Capture loop variable
-		_, err = c.AddFunc("00 45 12 * * *", func() {
+		_, err = c.AddFunc("30 00 10 * * *", func() {
 			fmt.Printf("Running cron job: daily at 10:00:30 AM for bundle ID %d\n", bundleId)
 			claimGift(bundleId, config.BearerToken, logger)
 		})
@@ -146,19 +146,19 @@ func claimGift(bundleId int, bearerToken string, logger *log.Logger) {
 	// Log response status and body
 	logger.Printf("Bundle ID: %d, Status: %s, Response: %s\n", bundleId, resp.Status, body)
 	if resp.StatusCode != http.StatusOK {
-		err := SendEmailNotification(bundleId, "email.config")
+		err := sendEmailNotification(bundleId, "email.json")
 		if err != nil {
 			logger.Printf("Error sending email: %v\n", err)
 		}
 	}
 }
 
-func SendEmailNotification(bundleid int, configFilePath string) error {
+func sendEmailNotification(bundleid int, configFilePath string) error {
 	// Map bundle IDs to failure messages
 	failureMessages := map[int]string{
 		1786571320: "bundleId10m Chest Failed",
 		844758222:  "bundleId4h Chest Failed",
-		000000000:  "24 hour Chest Failed",
+		1918154038: "24 hour Chest Failed",
 		787829412:  "dailymission Chest Failed",
 		1579845062: "OpticalDiode Chest Failed",
 		1250837343: "ReplicatorRations Chest Failed",
@@ -190,7 +190,7 @@ func SendEmailNotification(bundleid int, configFilePath string) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", config.SenderEmail)
 	m.SetHeader("To", config.RecipientEmail)
-	m.SetHeader("Subject", "STFC - AutomationError")
+	m.SetHeader("Subject", "STFC - Automation Error")
 	// Include failure message in the email body
 	m.SetBody("text/plain", fmt.Sprintf("STFC automation error: %s", failureMessage))
 
