@@ -87,7 +87,7 @@ func main() {
 
 	for _, bundleId := range bundleIDs {
 		bundleId := bundleId // Capture loop variable
-		_, err = c.AddFunc("40 12 * * *", func() {
+		_, err = c.AddFunc("0 45 12 * * *", func() {
 			fmt.Printf("Running cron job: daily at 10:00:30 AM for bundle ID %d\n", bundleId)
 			claimGift(bundleId, config.BearerToken, logger)
 		})
