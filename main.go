@@ -174,7 +174,7 @@ func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) erro
 		// Map bundle IDs to success messages
 		SuccessMessages := map[int]string{
 			// Add your success messages here
-			1786571320: "✅ 10 Minutes Chest Successful",
+			// 1786571320: "✅ 10 Minutes Chest Successful",
 			844758222:  "✅ 4 Hours Chest Successful",
 			1918154038: "✅ 24 hour Chest Successful",
 			787829412:  "✅ DailyMission Chest Successful",
