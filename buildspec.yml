@@ -10,3 +10,6 @@ phases:
     commands:
       - go build
 
+artifacts:
+  files:
+    - '**/*' # Include all files
