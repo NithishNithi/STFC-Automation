@@ -63,6 +63,6 @@ jobs:
         port: 22
         script: |
           cd /home/${{ secrets.AWS_EC2_USER }}/my-go-app
-          go build
+          /usr/local/go/bin/go build
           nohup ./stfc > /dev/null 2>&1 &
           
