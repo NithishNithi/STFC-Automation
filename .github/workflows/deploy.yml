@@ -65,4 +65,20 @@ jobs:
           cd /home/${{ secrets.AWS_EC2_USER }}/my-go-app
           /usr/local/go/bin/go build
           nohup ./stfc > /dev/null 2>&1 &
-          
+
+
+    - name: Verify the application is running
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.AWS_EC2_HOST }}
+        username: ${{ secrets.AWS_EC2_USER }}
+        key: ${{ secrets.AWS_EC2_SSH_KEY }}
+        port: 22
+        script: |
+          sleep 5  # Wait a few seconds to ensure the process has time to start
+          if pgrep -fl ./stfc; then
+            echo "Application is running."
+          else
+            echo "Application failed to start."
+            exit 1
+          fi
