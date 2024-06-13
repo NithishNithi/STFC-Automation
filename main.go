@@ -112,12 +112,14 @@ func ClaimGift(bundleId int, bearerToken string, logger *log.Logger, slackWebhoo
 	payload := map[string]int{"bundleId": bundleId}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		logger.Fatalf("Error marshalling payload: %v", err)
+		logger.Printf("Error marshalling payload: %v", err)
+		return
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		logger.Fatalf("Error creating request: %v", err)
+		logger.Printf("Error creating request: %v", err)
+		return
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -126,33 +128,30 @@ func ClaimGift(bundleId int, bearerToken string, logger *log.Logger, slackWebhoo
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Fatalf("Error making request: %v", err)
+		logger.Printf("Error making request: %v", err)
+		go SendSlackNotification(bundleId, true, slackWebhookURL, logger)
+		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		logger.Fatalf("Error reading response body: %v", err)
+		logger.Printf("Error reading response body: %v", err)
+		go SendSlackNotification(bundleId, true, slackWebhookURL, logger)
+		return
 	}
 
-	// Log response status and body
 	logger.Printf("Bundle ID: %d, Status: %s, Response: %s\n", bundleId, resp.Status, body)
 	if resp.StatusCode != http.StatusOK {
-		err := SendSlackNotification(bundleId, true, slackWebhookURL) // Notify Slack about failure
-		if err != nil {
-			logger.Printf("Error sending Slack notification: %v\n", err)
-		}
+		go SendSlackNotification(bundleId, true, slackWebhookURL, logger) // Notify Slack about failure
 	} else {
-		err := SendSlackNotification(bundleId, false, slackWebhookURL) // Notify Slack about success
-		if err != nil {
-			logger.Printf("Error sending Slack notification: %v\n", err)
-		}
+		go SendSlackNotification(bundleId, false, slackWebhookURL, logger) // Notify Slack about success
 	}
 }
-func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) error {
-	message := map[string]string{}
+
+func SendSlackNotification(bundleId int, isFailure bool, webhookURL string, logger *log.Logger) {
+	var message string
 	if isFailure {
-		// Map bundle IDs to failure messages
 		FailureMessages := map[int]string{
 			1786571320: "❌ 10 Minutes Chest Failed",
 			844758222:  "❌ 4 Hours Chest Failed",
@@ -164,17 +163,15 @@ func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) erro
 			1904351560: "❌ NadionSupply Chest Failed",
 			71216663:   "❌ TranswarpCell Chest Failed",
 		}
-		// Check if the bundle ID corresponds to a failure message
 		failureMessage, found := FailureMessages[bundleId]
 		if !found {
-			return fmt.Errorf("bundle ID %d does not correspond to a known failure", bundleId)
+			logger.Printf("Bundle ID %d does not correspond to a known failure", bundleId)
+			return
 		}
-		message["text"] = fmt.Sprintf("STFC Automation Error: %s", failureMessage)
+		message = fmt.Sprintf("STFC Automation Error: %s", failureMessage)
 	} else {
-		// Map bundle IDs to success messages
 		SuccessMessages := map[int]string{
-			// Add your success messages here
-			// 1786571320: "✅ 10 Minutes Chest Successful",
+		//	1786571320: "✅ 10 Minutes Chest Successful",
 			844758222:  "✅ 4 Hours Chest Successful",
 			1918154038: "✅ 24 hour Chest Successful",
 			787829412:  "✅ DailyMission Chest Successful",
@@ -184,29 +181,32 @@ func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) erro
 			1904351560: "✅ NadionSupply Chest Successful",
 			71216663:   "✅ TranswarpCell Chest Successful",
 		}
-		// Check if the bundle ID corresponds to a success message
 		successMessage, found := SuccessMessages[bundleId]
 		if !found {
-			return fmt.Errorf("bundle ID %d does not correspond to a known success", bundleId)
+			logger.Printf("Bundle ID %d does not correspond to a known success", bundleId)
+			return
 		}
-		message["text"] = fmt.Sprintf("STFC Automation Success: %s", successMessage)
+		message = fmt.Sprintf("STFC Automation Success: %s", successMessage)
 	}
 
-	messageBytes, err := json.Marshal(message)
+	slackMessage := map[string]string{"text": message}
+	messageBytes, err := json.Marshal(slackMessage)
 	if err != nil {
-		return fmt.Errorf("error marshalling Slack message: %v", err)
+		logger.Printf("Error marshalling Slack message: %v", err)
+		return
 	}
 
 	resp, err := http.Post(webhookURL, "application/json", bytes.NewBuffer(messageBytes))
 	if err != nil {
-		return fmt.Errorf("error sending Slack notification: %v", err)
+		logger.Printf("Error sending Slack notification: %v", err)
+		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("received non-OK response code: %d", resp.StatusCode)
+		logger.Printf("Received non-OK response code: %d", resp.StatusCode)
+		return
 	}
 
 	fmt.Println("Slack notification sent successfully!")
-	return nil
 }
