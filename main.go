@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -33,15 +32,6 @@ type Config struct {
 func main() {
 	c := cron.New(cron.WithSeconds()) // Enable seconds field
 
-	// Open log file
-	logFile, err := os.OpenFile("stfc.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatalf("Error opening log file: %v", err)
-	}
-	defer logFile.Close()
-
-	logger := log.New(logFile, "", log.LstdFlags)
-
 	// Read config file
 	config, err := ReadConfig("config.json")
 	if err != nil {
@@ -51,7 +41,7 @@ func main() {
 	// Schedule the first cron job (every 10 minutes and 30 seconds)
 	_, err = c.AddFunc("30 */10 * * * *", func() {
 		fmt.Println("Running cron job: every 10 minutes and 30 seconds")
-		ClaimGift(config.BundleId10m, config.BearerToken, logger, config.SlackWebhookURL)
+		ClaimGift(config.BundleId10m, config.BearerToken, config.SlackWebhookURL)
 	})
 	if err != nil {
 		log.Fatalf("Error scheduling the first cron job: %v", err)
@@ -60,7 +50,7 @@ func main() {
 	// Schedule the second cron job (every 4 hours and 30 seconds)
 	_, err = c.AddFunc("30 0 */4 * * *", func() {
 		fmt.Println("Running cron job: every 4 hours and 30 seconds")
-		ClaimGift(config.BundleId4h, config.BearerToken, logger, config.SlackWebhookURL)
+		ClaimGift(config.BundleId4h, config.BearerToken, config.SlackWebhookURL)
 	})
 	if err != nil {
 		log.Fatalf("Error scheduling the second cron job: %v", err)
@@ -81,7 +71,7 @@ func main() {
 		bundleId := bundleId
 		_, err = c.AddFunc("30 00 10 * * *", func() {
 			fmt.Printf("Running cron job: daily at 10:00:30 AM for bundle ID %d\n", bundleId)
-			ClaimGift(bundleId, config.BearerToken, logger, config.SlackWebhookURL)
+			ClaimGift(bundleId, config.BearerToken, config.SlackWebhookURL)
 		})
 		if err != nil {
 			log.Fatalf("Error scheduling daily cron job for bundle ID %d: %v", bundleId, err)
@@ -108,17 +98,17 @@ func ReadConfig(filename string) (*Config, error) {
 	return &config, nil
 }
 
-func ClaimGift(bundleId int, bearerToken string, logger *log.Logger, slackWebhookURL string) {
+func ClaimGift(bundleId int, bearerToken string, slackWebhookURL string) {
 	payload := map[string]int{"bundleId": bundleId}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		logger.Printf("Error marshalling payload: %v", err)
+		fmt.Printf("Error marshalling payload: %v\n", err)
 		return
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		logger.Printf("Error creating request: %v", err)
+		fmt.Printf("Error creating request: %v\n", err)
 		return
 	}
 
@@ -128,28 +118,28 @@ func ClaimGift(bundleId int, bearerToken string, logger *log.Logger, slackWebhoo
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Printf("Error making request: %v", err)
-		go SendSlackNotification(bundleId, true, slackWebhookURL, logger)
+		fmt.Printf("Error making request: %v\n", err)
+		go SendSlackNotification(bundleId, true, slackWebhookURL)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		logger.Printf("Error reading response body: %v", err)
-		go SendSlackNotification(bundleId, true, slackWebhookURL, logger)
+		fmt.Printf("Error reading response body: %v\n", err)
+		go SendSlackNotification(bundleId, true, slackWebhookURL)
 		return
 	}
 
-	logger.Printf("Bundle ID: %d, Status: %s, Response: %s\n", bundleId, resp.Status, body)
+	fmt.Printf("Bundle ID: %d, Status: %s, Response: %s\n", bundleId, resp.Status, body)
 	if resp.StatusCode != http.StatusOK {
-		go SendSlackNotification(bundleId, true, slackWebhookURL, logger) // Notify Slack about failure
+		go SendSlackNotification(bundleId, true, slackWebhookURL) // Notify Slack about failure
 	} else {
-		go SendSlackNotification(bundleId, false, slackWebhookURL, logger) // Notify Slack about success
+		go SendSlackNotification(bundleId, false, slackWebhookURL) // Notify Slack about success
 	}
 }
 
-func SendSlackNotification(bundleId int, isFailure bool, webhookURL string, logger *log.Logger) {
+func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) {
 	var message string
 	if isFailure {
 		FailureMessages := map[int]string{
@@ -165,13 +155,13 @@ func SendSlackNotification(bundleId int, isFailure bool, webhookURL string, logg
 		}
 		failureMessage, found := FailureMessages[bundleId]
 		if !found {
-			logger.Printf("Bundle ID %d does not correspond to a known failure", bundleId)
+			fmt.Printf("Bundle ID %d does not correspond to a known failure\n", bundleId)
 			return
 		}
 		message = fmt.Sprintf("STFC Automation Error: %s", failureMessage)
 	} else {
 		SuccessMessages := map[int]string{
-		//	1786571320: "✅ 10 Minutes Chest Successful",
+			// 1786571320: "✅ 10 Minutes Chest Successful",
 			844758222:  "✅ 4 Hours Chest Successful",
 			1918154038: "✅ 24 hour Chest Successful",
 			787829412:  "✅ DailyMission Chest Successful",
@@ -183,7 +173,7 @@ func SendSlackNotification(bundleId int, isFailure bool, webhookURL string, logg
 		}
 		successMessage, found := SuccessMessages[bundleId]
 		if !found {
-			logger.Printf("Bundle ID %d does not correspond to a known success", bundleId)
+			fmt.Printf("Bundle ID %d does not correspond to a known success\n", bundleId)
 			return
 		}
 		message = fmt.Sprintf("STFC Automation Success: %s", successMessage)
@@ -192,19 +182,19 @@ func SendSlackNotification(bundleId int, isFailure bool, webhookURL string, logg
 	slackMessage := map[string]string{"text": message}
 	messageBytes, err := json.Marshal(slackMessage)
 	if err != nil {
-		logger.Printf("Error marshalling Slack message: %v", err)
+		fmt.Printf("Error marshalling Slack message: %v\n", err)
 		return
 	}
 
 	resp, err := http.Post(webhookURL, "application/json", bytes.NewBuffer(messageBytes))
 	if err != nil {
-		logger.Printf("Error sending Slack notification: %v", err)
+		fmt.Printf("Error sending Slack notification: %v\n", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		logger.Printf("Received non-OK response code: %d", resp.StatusCode)
+		fmt.Printf("Received non-OK response code: %d\n", resp.StatusCode)
 		return
 	}
 
