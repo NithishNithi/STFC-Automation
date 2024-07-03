@@ -33,6 +33,7 @@ jobs:
         script: |
           rm -rf /home/${{ secrets.AWS_EC2_USER }}/my-go-app || true
 
+
     - name: Create directory for new project files
       uses: appleboy/ssh-action@master
       with:
