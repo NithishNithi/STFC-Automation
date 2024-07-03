@@ -13,6 +13,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+     - name: Debug SSH Key Permissions
+      run: |
+        ls -l ${{ secrets.AWS_EC2_SSH_KEY }}
+        cat ${{ secrets.AWS_EC2_SSH_KEY }}
+ 
+
     - name: Stop the running application
       uses: appleboy/ssh-action@master
       with:
