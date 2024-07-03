@@ -21,12 +21,7 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-          if pgrep -fl ./stfc; then
-            echo "Application is running. Stopping..."
-            pkill stfc || true
-          else
-            echo "Application not running. Continue..."
-          fi
+          pkill stfc || true
 
     - name: Remove old project files
       uses: appleboy/ssh-action@master
@@ -36,7 +31,7 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-          rm -rf /home/${{ secrets.AWS_EC2_USER }}/STFC-Automation || true
+          rm -rf /home/${{ secrets.AWS_EC2_USER }}/my-go-app || true
 
     - name: Create directory for new project files
       uses: appleboy/ssh-action@master
@@ -46,7 +41,8 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-          mkdir -p /home/${{ secrets.AWS_EC2_USER }}/STFC-Automation
+          cd /home/${{ secrets.AWS_EC2_USER }}
+          mkdir -p my-go-app
 
     - name: Upload project files to EC2
       uses: appleboy/scp-action@master
@@ -56,7 +52,7 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         source: "."
-        target: "/home/${{ secrets.AWS_EC2_USER }}/STFC-Automation"
+        target: "/home/${{ secrets.AWS_EC2_USER }}/my-go-app"
 
     - name: Build and run the new application
       uses: appleboy/ssh-action@master
@@ -66,9 +62,10 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-          cd /home/${{ secrets.AWS_EC2_USER }}/STFC-Automation
+          cd /home/${{ secrets.AWS_EC2_USER }}/my-go-app
           /usr/local/go/bin/go build
           nohup ./stfc > /dev/null 2>&1 &
+
 
     - name: Verify the application is running
       uses: appleboy/ssh-action@master
