@@ -13,10 +13,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-
-
-          
-
     - name: Remove old project files
       uses: appleboy/ssh-action@master
       with:
