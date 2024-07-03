@@ -20,7 +20,8 @@ jobs:
         username: ${{ secrets.AWS_EC2_USER }}
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
-        script: |
+        # script: |
+        #     pkill stfc || true
 
           
 
