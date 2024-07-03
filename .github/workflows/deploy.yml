@@ -21,12 +21,8 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-          if pgrep -fl ./stfc; then
-            echo "Application is running. Stopping..."
-            pkill stfc || true
-          else
-            echo "Application not running. Continue..."
-          fi
+
+          
 
     - name: Remove old project files
       uses: appleboy/ssh-action@master
