@@ -88,3 +88,6 @@ jobs:
       run: |
         IST_DATE=$(TZ=Asia/Kolkata date +"%Y-%m-%d %H:%M:%S %Z")
         curl -X POST -H 'Content-type: application/json' --data '{"text":"Deployment complete: Application is running at '"$IST_DATE"'."}' https://hooks.slack.com/services/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
+
+
+
