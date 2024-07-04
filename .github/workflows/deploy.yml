@@ -13,6 +13,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Stop the running application
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.AWS_EC2_HOST }}
+        username: ${{ secrets.AWS_EC2_USER }}
+        key: ${{ secrets.AWS_EC2_SSH_KEY }}
+        port: 22
+        script: |
+          pkill stfc || true
+
     - name: Remove old project files
       uses: appleboy/ssh-action@master
       with:
@@ -74,4 +84,4 @@ jobs:
     - name: Notify Slack
       run: |
         IST_DATE=$(TZ=Asia/Kolkata date +"%Y-%m-%d %H:%M:%S %Z")
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"Deployment complete: Application is running at '"$IST_DATE"'."}' https://hooks.slack.com/services/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
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"Deployment complete: Application is running at '"$IST_DATE"'."}' ${{ secrets.SLACK_WEBHOOK }}
