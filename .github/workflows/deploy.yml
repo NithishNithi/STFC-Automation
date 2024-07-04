@@ -21,7 +21,7 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-        if pgrep -fl ./stfc; then
+          if pgrep -fl ./stfc; then
             echo "Application is running...Kill Process"
             pkill stfc
           else
