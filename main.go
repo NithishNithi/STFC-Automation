@@ -153,7 +153,6 @@ func ClaimGift(bundleId int, bearerToken string, slackWebhookURL string) {
 
 func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) {
     var message string
-    if (bundleId == 1786571320 && isFailure) || bundleId != 1786571320 {
         if isFailure {
             FailureMessages := map[int]string{
                 1786571320: "❌ 10 Minutes Chest Failed",
@@ -212,5 +211,5 @@ func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) {
         }
 
         logrus.Println("Slack notification sent successfully!")
-    }
+    
 }
