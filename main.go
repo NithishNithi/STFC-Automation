@@ -171,10 +171,10 @@ func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) {
 			1918154038: "❌ 24 hour Chest Failed",
 			787829412:  "❌ DailyMission Chest Failed",
 			1579845062: "❌ OpticalDiode Chest Failed",
-			1250837343: "❌ ReplicatorRations Chest Failed",
+			1210188306: "❌ ReplicatorRations Chest Failed",
 			718968170:  "❌ TrailBells Chest Failed",
 			1904351560: "❌ NadionSupply Chest Failed",
-			71216663:   "❌ TranswarpCell Chest Failed",
+			1438866306: "❌ TranswarpCell Chest Failed",
 		}
 		failureMessage, found := FailureMessages[bundleId]
 		if !found {
@@ -189,10 +189,10 @@ func SendSlackNotification(bundleId int, isFailure bool, webhookURL string) {
 			1918154038: "✅ 24 hour Chest Successful",
 			787829412:  "✅ DailyMission Chest Successful",
 			1579845062: "✅ OpticalDiode Chest Successful",
-			1250837343: "✅ ReplicatorRations Chest Successful",
+			1210188306: "✅ ReplicatorRations Chest Successful",
 			718968170:  "✅ TrailBells Chest Successful",
 			1904351560: "✅ NadionSupply Chest Successful",
-			71216663:   "✅ TranswarpCell Chest Successful",
+			1438866306: "✅ TranswarpCell Chest Successful",
 		}
 		successMessage, found := SuccessMessages[bundleId]
 		if !found {
