@@ -37,7 +37,7 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-          rm -rf /home/${{ secrets.AWS_EC2_USER }}/STFC-Automation || true
+          rm -rf /home/${{ secrets.AWS_EC2_USER }}/Projects/STFC-Automation || true
 
     - name: Create directory for new project files
       uses: appleboy/ssh-action@master
@@ -47,7 +47,7 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-          mkdir -p /home/${{ secrets.AWS_EC2_USER }}/STFC-Automation
+          mkdir -p /home/${{ secrets.AWS_EC2_USER }}/Projects/STFC-Automation
 
     - name: Upload project files to EC2
       uses: appleboy/scp-action@master
@@ -57,7 +57,7 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         source: "."
-        target: "/home/${{ secrets.AWS_EC2_USER }}/STFC-Automation"
+        target: "/home/${{ secrets.AWS_EC2_USER }}/Projects/STFC-Automation"
 
     - name: Build and run the new application
       uses: appleboy/ssh-action@master
@@ -67,7 +67,7 @@ jobs:
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         port: 22
         script: |
-          cd /home/${{ secrets.AWS_EC2_USER }}/STFC-Automation
+          cd /home/${{ secrets.AWS_EC2_USER }}/Projects/STFC-Automation
           /usr/local/go/bin/go build
           nohup ./stfc > /dev/null 2>&1 &
 
