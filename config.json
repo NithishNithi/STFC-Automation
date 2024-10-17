@@ -9,5 +9,5 @@
     "TrailBells": 718968170,
     "NadionSupply": 1904351560,
     "TranswarpCell": 1438866306,
-    "slackWebhookURL": "https://hooks.slack.com/services/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"
+    "slackWebhookURL": "" // Enter Slack Webhook Url here
 }
