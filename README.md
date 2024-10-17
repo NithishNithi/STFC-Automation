@@ -1,73 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STFC Automation Service</title>
-</head>
-<body>
-    <h1>STFC Automation Service</h1>
 
-    <h2>Overview</h2>
-    <p>
-        This project automates the claiming of rewards for 
-        <em>Star Trek Fleet Command</em> using scheduled cron jobs. 
-        It interacts with the game’s API to claim gifts at specific intervals 
-        (10 minutes, 4 hours, 24 hours, and daily). If a request fails, 
-        the service sends notifications to a configured Slack webhook for visibility.
-    </p>
+# STFC Automation Service
 
-    <h2>Features</h2>
-    <ul>
-        <li><strong>Cron-based Scheduling:</strong> Automates requests at specific intervals using cron.</li>
-        <li><strong>Error Handling:</strong> Logs request outcomes (both success and failure).</li>
-        <li><strong>Slack Notifications:</strong> Sends notifications on success or failure.</li>
-        <li><strong>Syslog Integration:</strong> Logs messages to syslog and console.</li>
-        <li><strong>Custom Logging:</strong> Uses a custom log formatter to simplify log output.</li>
-    </ul>
+## Overview
+This project automates the claiming of rewards for **Star Trek Fleet Command** using scheduled cron jobs. It interacts with the game’s API to claim gifts at specific intervals (10 minutes, 4 hours, 24 hours, and daily). If a request fails, the service sends notifications to a configured Slack webhook for visibility.
 
-    <h2>Table of Contents</h2>
-    <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-        <li><a href="#configuration">Configuration</a></li>
-        <li><a href="#how-to-get-bearer-token">How to Get Bearer Token</a></li>
-        <li><a href="#usage">Usage</a></li>
-        <li><a href="#project-structure">Project Structure</a></li>
-        <li><a href="#cron-job-schedule">Cron Job Schedule</a></li>
-        <li><a href="#logging">Logging</a></li>
-        <li><a href="#troubleshooting">Troubleshooting</a></li>
-        <li><a href="#license">License</a></li>
-    </ul>
+## Features
+- **Cron-based Scheduling:** Automates requests at specific intervals using cron.
+- **Error Handling:** Logs request outcomes (both success and failure).
+- **Slack Notifications:** Sends notifications on success or failure.
+- **Syslog Integration:** Logs messages to syslog and console.
+- **Custom Logging:** Uses a custom log formatter to simplify log output.
 
-    <h2 id="prerequisites">Prerequisites</h2>
-    <p>Ensure the following tools and dependencies are installed on your system:</p>
-    <ul>
-        <li><strong>Go 1.18+</strong> installed and configured.</li>
-        <li><strong>Access to Star Trek Fleet Command API</strong> with a valid bearer token.</li>
-        <li><strong>Slack Webhook URL</strong> for sending notifications.</li>
-        <li>A <em>nix-based environment</em> (for syslog integration).</li>
-    </ul>
+## Table of Contents
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [How to Get Bearer Token](#how-to-get-bearer-token)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Cron Job Schedule](#cron-job-schedule)
+- [Logging](#logging)
+- [Slack Notifications](#slack-notifications)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-    <h2 id="installation">Installation</h2>
-    <ol>
-        <li><strong>Clone the repository:</strong>
-            <pre><code>git clone &lt;repository-url&gt;
-cd &lt;repository-folder&gt;</code></pre>
-        </li>
-        <li><strong>Install dependencies:</strong>
-            <pre><code>go get github.com/robfig/cron/v3
-go get github.com/sirupsen/logrus</code></pre>
-        </li>
-        <li><strong>Compile the application:</strong>
-            <pre><code>go build -o stfc-automation</code></pre>
-        </li>
-    </ol>
+## Prerequisites
+Make sure the following are installed on your system:
+- **Go 1.18+** installed and configured.
+- **Access to Star Trek Fleet Command API** with a valid bearer token.
+- **Slack Webhook URL** for sending notifications.
+- A **nix-based environment** (for syslog integration).
 
-    <h2 id="configuration">Configuration</h2>
-    <p>Create a <code>config.json</code> file in the project root with the following structure:</p>
-    <pre><code>{
-  "bearerToken": "&lt;your_bearer_token_here&gt;",
+## Installation
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd <repository-folder>
+   ```
+2. **Install dependencies:**
+   ```bash
+   go get github.com/robfig/cron/v3
+   go get github.com/sirupsen/logrus
+   ```
+3. **Compile the application:**
+   ```bash
+   go build -o stfc-automation
+   ```
+
+## Configuration
+Create a `config.json` file in the project root with the following structure:
+```json
+{
+  "bearerToken": "<your_bearer_token_here>",
   "bundleId10m": 1786571320,
   "bundleId4h": 844758222,
   "bundleId24h": 1918154038,
@@ -77,95 +61,91 @@ go get github.com/sirupsen/logrus</code></pre>
   "TrailBells": 718968170,
   "NadionSupply": 1904351560,
   "TranswarpCell": 1438866306,
-  "slackWebhookURL": "&lt;your_slack_webhook_url_here&gt;"
-}</code></pre>
+  "slackWebhookURL": "<your_slack_webhook_url_here>"
+}
+```
 
-    <h2 id="how-to-get-bearer-token">How to Get Bearer Token</h2>
-    <ol>
-        <li>Go to the <a href="https://home.startrekfleetcommand.com/" target="_blank">Star Trek Fleet Command website</a>.</li>
-        <li>Enter your email and password to log in.</li>
-        <li>Open the browser's <strong>Developer Tools</strong> (usually by pressing <code>F12</code> or right-clicking and selecting <em>Inspect</em>).</li>
-        <li>Navigate to the <strong>Network</strong> tab in Developer Tools.</li>
-        <li>Submit the login form on the website.</li>
-        <li>Look for a <strong>login</strong> request in the list of network requests.</li>
-        <li>Click on the <strong>login</strong> request, and in the <strong>Response</strong> section, find the <code>access_token</code>.</li>
-        <li>Use the <code>access_token</code> as the <strong>bearerToken</strong> value in your <code>config.json</code>.</li>
-    </ol>
+## How to Get Bearer Token
+1. Visit [Star Trek Fleet Command](https://home.startrekfleetcommand.com/).
+2. Enter your **email** and **password** to log in.
+3. Open **Developer Tools** (press `F12` or right-click and select **Inspect**).
+4. Go to the **Network** tab in Developer Tools.
+5. Submit the login form on the website.
+6. Look for a **login** request in the network requests list.
+7. Click on the **login** request, and in the **Response** section, locate the `access_token`.
+8. Use the `access_token` as the **bearerToken** in your `config.json` file.
 
-    <h2 id="usage">Usage</h2>
-    <ol>
-        <li><strong>Run the service:</strong>
-            <pre><code>./stfc-automation</code></pre>
-            <p>Output:</p>
-            <pre><code>Engines to maximum, we're ready for launch</code></pre>
-        </li>
-        <li>The program will run indefinitely, executing scheduled jobs as per the cron configuration.</li>
-    </ol>
+## Usage
+1. **Run the service:**
+   ```bash
+   ./stfc-automation
+   ```
+   Output:
+   ```
+   Engines to maximum, we're ready for launch
+   ```
+2. The program will run indefinitely, executing scheduled jobs according to the cron configuration.
 
-    <h2 id="project-structure">Project Structure</h2>
-    <pre><code>.
+## Project Structure
+```
+.
 ├── main.go          # Main application code
 ├── config.json      # Configuration file (user-defined)
-└── README.md        # Project documentation</code></pre>
+└── README.md        # Project documentation
+```
 
-    <h2 id="cron-job-schedule">Cron Job Schedule</h2>
-    <ul>
-        <li><strong>Every 10 minutes + 30 seconds:</strong> Claims gift with <code>BundleId10m</code>.</li>
-        <li><strong>Every 4 hours + 30 seconds:</strong> Claims gift with <code>BundleId4h</code>.</li>
-        <li><strong>Every day at 10:00:30 AM:</strong> Claims all daily gifts.</li>
-    </ul>
+## Cron Job Schedule
+- **Every 10 minutes + 30 seconds:** Claims gift with `BundleId10m`.
+- **Every 4 hours + 30 seconds:** Claims gift with `BundleId4h`.
+- **Every day at 10:00:30 AM:** Claims all daily gifts.
 
-    <h3>Cron Expressions</h3>
-    <ul>
-        <li><strong>Every 10 minutes:</strong>
-            <pre><code>30 */10 * * * *</code></pre>
-        </li>
-        <li><strong>Every 4 hours:</strong>
-            <pre><code>30 0 */4 * * *</code></pre>
-        </li>
-        <li><strong>Daily at 10:00:30 AM:</strong>
-            <pre><code>30 00 10 * * *</code></pre>
-        </li>
-    </ul>
+### Cron Expressions
+- **Every 10 minutes:**
+  ```
+  30 */10 * * * *
+  ```
+- **Every 4 hours:**
+  ```
+  30 0 */4 * * *
+  ```
+- **Daily at 10:00:30 AM:**
+  ```
+  30 00 10 * * *
+  ```
 
-    <h2 id="logging">Logging</h2>
-    <p>The service uses <strong>Logrus</strong> for logging and sends output to both:</p>
-    <ul>
-        <li><strong>Syslog:</strong> Logs the information using the <code>syslog</code> package.</li>
-        <li><strong>Console:</strong> Outputs logs to <code>stdout</code>.</li>
-    </ul>
+## Logging
+The service uses **Logrus** for logging and sends output to both:
+- **Syslog:** Logs the information using the `syslog` package.
+- **Console:** Outputs logs to `stdout`.
 
-    <h3>Custom Formatter</h3>
-    <pre><code>type CustomFormatter struct{}
+### Custom Formatter
+```go
+type CustomFormatter struct{}
+
 func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-    return []byte(entry.Message + "\n"), nil
-}</code></pre>
+    return []byte(entry.Message + "
+"), nil
+}
+```
 
-    <h2 id="slack-notifications">Slack Notifications</h2>
-    <p>
-        The service sends a <strong>Slack notification</strong> whenever a request succeeds or fails.
-    </p>
-    <h3>Failure Messages Example:</h3>
-    <ul>
-        <li><strong>10 Minutes Chest:</strong> ❌ 10 Minutes Chest Failed</li>
-        <li><strong>4 Hours Chest:</strong> ❌ 4 Hours Chest Failed</li>
-    </ul>
+## Slack Notifications
+The service sends a **Slack notification** whenever a request succeeds or fails.
 
-    <h3>Example Slack Payload:</h3>
-    <pre><code>{
+### Failure Messages Example:
+- **10 Minutes Chest:** ❌ 10 Minutes Chest Failed
+- **4 Hours Chest:** ❌ 4 Hours Chest Failed
+
+### Example Slack Payload:
+```json
+{
   "text": "STFC Automation Error: ❌ 10 Minutes Chest Failed"
-}</code></pre>
+}
+```
 
-    <h2 id="troubleshooting">Troubleshooting</h2>
-    <ul>
-        <li><strong>Cannot connect to syslog:</strong> Ensure syslog is configured on your system and running correctly.</li>
-        <li><strong>Invalid Bearer Token:</strong> Double-check the <code>bearerToken</code> in <code>config.json</code> and ensure it hasn’t expired.</li>
-        <li><strong>Slack notifications not sent:</strong> Verify the <code>slackWebhookURL</code> in <code>config.json</code>. Check network connectivity to Slack's API.</li>
-    </ul>
+## Troubleshooting
+- **Cannot connect to syslog:** Ensure syslog is configured on your system and running correctly.
+- **Invalid Bearer Token:** Double-check the `bearerToken` in `config.json` and ensure it hasn’t expired.
+- **Network issues:** Ensure your machine can connect to the Star Trek Fleet Command API.
 
-    <h2 id="license">License</h2>
-    <p>This project is licensed under the MIT License. See the LICENSE file for more details.</p>
-
-    <p>Enjoy automating your Star Trek Fleet Command rewards collection! 🚀</p>
-</body>
-</html>
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
