@@ -9,5 +9,5 @@
     "TrailBells": 718968170,
     "NadionSupply": 1904351560,
     "TranswarpCell": 1438866306,
-    "slackWebhookURL": "" // Enter Slack Webhook Url here
+    "slackWebhookURL": "" // Enter Slack Webhook Url here, if you want the reward-claims to be notified...
 }
