@@ -26,7 +26,6 @@ const url = "https://storeapi.startrekfleetcommand.com/api/v2/offers/gifts/claim
 
 // Config struct to hold configuration values
 type Config struct {
-	BearerToken       string `json:"bearerToken"`
 	BundleId10m       int    `json:"bundleId10m"`
 	BundleId4h        int    `json:"bundleId4h"`
 	BundleId24h       int    `json:"bundleId24h"`
@@ -36,7 +35,6 @@ type Config struct {
 	TrailBells        int    `json:"TrailBells"`
 	NadionSupply      int    `json:"NadionSupply"`
 	TranswarpCell     int    `json:"TranswarpCell"`
-	SlackWebhookURL   string `json:"slackWebhookURL"`
 }
 
 func main() {
@@ -47,6 +45,17 @@ func main() {
 	config, err := ReadConfig("config.json")
 	if err != nil {
 		logrus.Fatalf("Error reading config file: %v", err)
+	}
+
+	// Get Bearer Token and Slack Webhook URL from environment variables
+	bearerToken := os.Getenv("BEARER_TOKEN")
+	if bearerToken == "" {
+		logrus.Fatal("Environment variable BEARER_TOKEN not set")
+	}
+
+	slackWebhookURL := os.Getenv("SLACK_WEBHOOK_URL")
+	if slackWebhookURL == "" {
+		logrus.Fatal("Environment variable SLACK_WEBHOOK_URL not set")
 	}
 
 	// Configure logrus to output logs to both syslog and console
@@ -64,7 +73,7 @@ func main() {
 	// Schedule the first cron job (every 10 minutes and 30 seconds)
 	_, err = c.AddFunc("30 */10 * * * *", func() {
 		logrus.Info("Running cron job: every 10 minutes and 30 seconds")
-		ClaimGift(config.BundleId10m, config.BearerToken, config.SlackWebhookURL)
+		ClaimGift(config.BundleId10m, bearerToken, slackWebhookURL)
 	})
 	if err != nil {
 		logrus.Fatalf("Error scheduling the first cron job: %v", err)
@@ -73,7 +82,7 @@ func main() {
 	// Schedule the second cron job (every 4 hours and 30 seconds)
 	_, err = c.AddFunc("30 0 */4 * * *", func() {
 		logrus.Info("Running cron job: every 4 hours and 30 seconds")
-		ClaimGift(config.BundleId4h, config.BearerToken, config.SlackWebhookURL)
+		ClaimGift(config.BundleId4h, bearerToken, slackWebhookURL)
 	})
 	if err != nil {
 		logrus.Fatalf("Error scheduling the second cron job: %v", err)
@@ -94,7 +103,7 @@ func main() {
 		bundleId := bundleId
 		_, err = c.AddFunc("30 00 10 * * *", func() {
 			logrus.Infof("Running cron job: daily at 10:00:30 AM for bundle ID %d\n", bundleId)
-			ClaimGift(bundleId, config.BearerToken, config.SlackWebhookURL)
+			ClaimGift(bundleId, bearerToken, slackWebhookURL)
 		})
 		if err != nil {
 			logrus.Fatalf("Error scheduling daily cron job for bundle ID %d: %v", bundleId, err)
